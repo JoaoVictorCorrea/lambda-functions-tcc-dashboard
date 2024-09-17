@@ -2,7 +2,7 @@ package tcc.dashboard.models;
 
 import java.util.Objects;
 
-public class ViolenceSituationByUnit {
+public class ViolenceSituationsTypesByUnit {
 
     private Unit unit;
     private int qtdFisica;
@@ -11,10 +11,10 @@ public class ViolenceSituationByUnit {
     private int qtdAtoInfracional;
     private int qtdNegligenciaContraCrianca;
 
-    public ViolenceSituationByUnit() {}
+    public ViolenceSituationsTypesByUnit() {}
 
-    public ViolenceSituationByUnit(Unit unit, int qtdFisica, int qtdPsicologica,
-           int qtdAbusoOuViolenciaSexual, int qtdAtoInfracional, int qtdNegligenciaContraCrianca) {
+    public ViolenceSituationsTypesByUnit(Unit unit, int qtdFisica, int qtdPsicologica,
+                                         int qtdAbusoOuViolenciaSexual, int qtdAtoInfracional, int qtdNegligenciaContraCrianca) {
         this.unit = unit;
         this.qtdFisica = qtdFisica;
         this.qtdPsicologica = qtdPsicologica;
@@ -75,7 +75,7 @@ public class ViolenceSituationByUnit {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ViolenceSituationByUnit that = (ViolenceSituationByUnit) o;
+        ViolenceSituationsTypesByUnit that = (ViolenceSituationsTypesByUnit) o;
         return qtdFisica == that.qtdFisica && qtdPsicologica == that.qtdPsicologica && qtdAbusoOuViolenciaSexual == that.qtdAbusoOuViolenciaSexual && qtdAtoInfracional == that.qtdAtoInfracional && qtdNegligenciaContraCrianca == that.qtdNegligenciaContraCrianca && Objects.equals(unit, that.unit);
     }
 
