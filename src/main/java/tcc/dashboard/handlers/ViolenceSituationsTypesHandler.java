@@ -1,11 +1,10 @@
-package tcc.dashboard.lambdas;
+package tcc.dashboard.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
-import tcc.dashboard.models.AssistanceTypesByUnit;
 import tcc.dashboard.models.Unit;
 import tcc.dashboard.models.ViolenceSituationsTypesByUnit;
 
@@ -24,9 +23,10 @@ public class ViolenceSituationsTypesHandler implements
 
         var logger = context.getLogger();
 
-        final String DB_URL = "jdbc:mysql://3.86.192.6:3306/svsaweb";
-        final String DB_USER = "admin";
-        final String DB_PASS = "ifsp";
+        final String DB_IP = System.getenv("DB_IP");
+        final String DB_URL = "jdbc:mysql://" + DB_IP +":3306/svsaweb";
+        final String DB_USER = System.getenv("DB_USER");
+        final String DB_PASS = System.getenv("DB_PASSWORD");
 
         List<Unit> units = new ArrayList<>();
         List<ViolenceSituationsTypesByUnit> violenceSituationsTypesByUnits = new ArrayList<>();
