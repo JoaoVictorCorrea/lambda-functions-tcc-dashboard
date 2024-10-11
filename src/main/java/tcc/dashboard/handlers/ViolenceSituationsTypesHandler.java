@@ -13,7 +13,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ViolenceSituationsTypesHandler implements
         RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -22,6 +24,9 @@ public class ViolenceSituationsTypesHandler implements
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context){
 
         var logger = context.getLogger();
+
+        Map<String, String> queryParams = request.getQueryStringParameters();
+        String year = queryParams != null ? queryParams.get("year") : null;
 
         final String DB_IP = System.getenv("DB_IP");
         final String DB_URL = "jdbc:mysql://" + DB_IP +":3306/svsaweb";
@@ -67,30 +72,10 @@ public class ViolenceSituationsTypesHandler implements
             // Iterate each unit and consult total of assistance types
             for(Unit unit: units) {
 
-                query = "SELECT"
-                        + "    SUM(qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL) AS total_qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL, "
-                        + "    SUM(qtd_VIOLENCIA_FISICA) AS total_qtd_VIOLENCIA_FISICA, "
-                        + "    SUM(qtd_VIOLENCIA_PSICOLOGICA) AS total_qtd_VIOLENCIA_PSICOLOGICA, "
-                        + "    SUM(qtd_NEGLIGENCIA_CONTRA_CRIANÇA) AS total_qtd_NEGLIGENCIA_CONTRA_CRIANÇA,"
-                        + "    SUM(qtd_ATO_INFRACIONAL) AS total_qtd_ATO_INFRACIONAL "
-                        + "FROM"
-                        + "    ("
-                        + "        SELECT"
-                        + "            SUM(CASE WHEN sv.situacao = 'ABUSO_OU_E_VIOLENCIA_SEXUAL' THEN 1 ELSE 0 END) AS qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL,"
-                        + "            SUM(CASE WHEN sv.situacao = 'VIOLENCIA_FISICA' THEN 1 ELSE 0 END) AS qtd_VIOLENCIA_FISICA, "
-                        + "            SUM(CASE WHEN sv.situacao = 'VIOLENCIA_PSICOLOGICA' THEN 1 ELSE 0 END) AS qtd_VIOLENCIA_PSICOLOGICA, "
-                        + "            SUM(CASE WHEN sv.situacao = 'NEGLIGENCIA_CONTRA_CRIANÇA' THEN 1 ELSE 0 END) AS qtd_NEGLIGENCIA_CONTRA_CRIANÇA, "
-                        + "            SUM(CASE WHEN sv.situacao = 'ATO_INFRACIONAL' THEN 1 ELSE 0 END) AS qtd_ATO_INFRACIONAL "
-                        + "        FROM "
-                        + "            situacaoviolencia sv "
-                        + "            INNER JOIN pessoa p ON sv.codigo_pessoa = p.codigo "
-                        + "            INNER JOIN familia f ON p.codigo_familia = f.codigo "
-                        + "            INNER JOIN prontuario pr ON f.codigo_prontuario = pr.codigo "
-                        + "            INNER JOIN unidade u ON pr.codigo_unidade = u.codigo "
-                        + "        WHERE "
-                        + "            pr.codigo_unidade = " + unit.getId()
-                        + "            AND sv.tenant_id = 1 "
-                        + "        ) AS subquery";
+                if(year != null)
+                    query = createQueryWithYear(unit, year);
+                else
+                    query = createQueryWithoutYear(unit);
 
                 // Execute a query
                 rs = stmt.executeQuery(query);
@@ -121,17 +106,77 @@ public class ViolenceSituationsTypesHandler implements
         // Convert the unit's list to JSON
         Gson gson = new Gson();
         String jsonResponse = gson.toJson(violenceSituationsTypesByUnits);
-
         logger.log(jsonResponse);
 
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
         response.setStatusCode(200);
         response.setBody(jsonResponse);
         response.setIsBase64Encoded(false);
-        response.setHeaders(
-                java.util.Collections.singletonMap("Access-Control-Allow-Origin", "*")
-        );
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Access-Control-Allow-Origin", "*");
+        headers.put("Content-Type", "application/json");
+
+        response.setHeaders(headers);
 
         return response;
     }
+
+    private String createQueryWithoutYear(Unit unit){
+
+        return "SELECT"
+                + "    SUM(qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL) AS total_qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL, "
+                + "    SUM(qtd_VIOLENCIA_FISICA) AS total_qtd_VIOLENCIA_FISICA, "
+                + "    SUM(qtd_VIOLENCIA_PSICOLOGICA) AS total_qtd_VIOLENCIA_PSICOLOGICA, "
+                + "    SUM(qtd_NEGLIGENCIA_CONTRA_CRIANÇA) AS total_qtd_NEGLIGENCIA_CONTRA_CRIANÇA,"
+                + "    SUM(qtd_ATO_INFRACIONAL) AS total_qtd_ATO_INFRACIONAL "
+                + "FROM"
+                + "    ("
+                + "        SELECT"
+                + "            SUM(CASE WHEN sv.situacao = 'ABUSO_OU_E_VIOLENCIA_SEXUAL' THEN 1 ELSE 0 END) AS qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL,"
+                + "            SUM(CASE WHEN sv.situacao = 'VIOLENCIA_FISICA' THEN 1 ELSE 0 END) AS qtd_VIOLENCIA_FISICA, "
+                + "            SUM(CASE WHEN sv.situacao = 'VIOLENCIA_PSICOLOGICA' THEN 1 ELSE 0 END) AS qtd_VIOLENCIA_PSICOLOGICA, "
+                + "            SUM(CASE WHEN sv.situacao = 'NEGLIGENCIA_CONTRA_CRIANÇA' THEN 1 ELSE 0 END) AS qtd_NEGLIGENCIA_CONTRA_CRIANÇA, "
+                + "            SUM(CASE WHEN sv.situacao = 'ATO_INFRACIONAL' THEN 1 ELSE 0 END) AS qtd_ATO_INFRACIONAL "
+                + "        FROM "
+                + "            situacaoviolencia sv "
+                + "            INNER JOIN pessoa p ON sv.codigo_pessoa = p.codigo "
+                + "            INNER JOIN familia f ON p.codigo_familia = f.codigo "
+                + "            INNER JOIN prontuario pr ON f.codigo_prontuario = pr.codigo "
+                + "            INNER JOIN unidade u ON pr.codigo_unidade = u.codigo "
+                + "        WHERE "
+                + "            pr.codigo_unidade = " + unit.getId()
+                + "            AND sv.tenant_id = 1 "
+                + "        ) AS subquery";
+    }
+
+    private String createQueryWithYear(Unit unit, String year){
+
+        return "SELECT"
+                + "    SUM(qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL) AS total_qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL, "
+                + "    SUM(qtd_VIOLENCIA_FISICA) AS total_qtd_VIOLENCIA_FISICA, "
+                + "    SUM(qtd_VIOLENCIA_PSICOLOGICA) AS total_qtd_VIOLENCIA_PSICOLOGICA, "
+                + "    SUM(qtd_NEGLIGENCIA_CONTRA_CRIANÇA) AS total_qtd_NEGLIGENCIA_CONTRA_CRIANÇA,"
+                + "    SUM(qtd_ATO_INFRACIONAL) AS total_qtd_ATO_INFRACIONAL "
+                + "FROM"
+                + "    ("
+                + "        SELECT"
+                + "            SUM(CASE WHEN sv.situacao = 'ABUSO_OU_E_VIOLENCIA_SEXUAL' THEN 1 ELSE 0 END) AS qtd_ABUSO_OU_E_VIOLENCIA_SEXUAL,"
+                + "            SUM(CASE WHEN sv.situacao = 'VIOLENCIA_FISICA' THEN 1 ELSE 0 END) AS qtd_VIOLENCIA_FISICA, "
+                + "            SUM(CASE WHEN sv.situacao = 'VIOLENCIA_PSICOLOGICA' THEN 1 ELSE 0 END) AS qtd_VIOLENCIA_PSICOLOGICA, "
+                + "            SUM(CASE WHEN sv.situacao = 'NEGLIGENCIA_CONTRA_CRIANÇA' THEN 1 ELSE 0 END) AS qtd_NEGLIGENCIA_CONTRA_CRIANÇA, "
+                + "            SUM(CASE WHEN sv.situacao = 'ATO_INFRACIONAL' THEN 1 ELSE 0 END) AS qtd_ATO_INFRACIONAL "
+                + "        FROM "
+                + "            situacaoviolencia sv "
+                + "            INNER JOIN pessoa p ON sv.codigo_pessoa = p.codigo "
+                + "            INNER JOIN familia f ON p.codigo_familia = f.codigo "
+                + "            INNER JOIN prontuario pr ON f.codigo_prontuario = pr.codigo "
+                + "            INNER JOIN unidade u ON pr.codigo_unidade = u.codigo "
+                + "        WHERE "
+                + "            pr.codigo_unidade = " + unit.getId()
+                + "            AND YEAR(sv.data) = " + year
+                + "            AND sv.tenant_id = 1 "
+                + "        ) AS subquery";
+    }
+
 }
