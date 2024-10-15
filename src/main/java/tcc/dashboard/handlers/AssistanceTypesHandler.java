@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.google.gson.Gson;
 import tcc.dashboard.models.AssistanceTypesByUnit;
 import tcc.dashboard.models.Unit;
+import tcc.dashboard.services.CryptographyService;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,29 +26,28 @@ public class AssistanceTypesHandler implements
         Map<String, String> queryParams = request.getQueryStringParameters();
         String year = queryParams != null ? queryParams.get("year") : null;
 
-        logger.log(" Param year - " + year);
+        logger.log("Param year - " + year);
 
         final String DB_IP = System.getenv("DB_IP");
         final String DB_URL = "jdbc:mysql://" + DB_IP +":3306/svsaweb";
         final String DB_USER = System.getenv("DB_USER");
         final String DB_PASS = System.getenv("DB_PASSWORD");
+        final String DB_SECRET_KEY = System.getenv("DB_SECRET_KEY");
 
         List<Unit> units = new ArrayList<>();
         List<AssistanceTypesByUnit> assistanceTypesByUnits = new ArrayList<>();
 
-        logger.log(" Request received - " + request.getBody());
-
         // Loading driver
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            logger.log("Driver Load.");
+            logger.log(" Driver Load.");
         } catch (ClassNotFoundException e) {
-            logger.log(e.getMessage());
+            logger.log(" Error during driver load:" + e.getMessage());
         }
 
         // Connecting with Database
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
-            logger.log("Database Connected.");
+            logger.log(" Database Connected.");
 
             // Create a Statement to execute queries
             Statement stmt = conn.createStatement();
@@ -89,8 +89,6 @@ public class AssistanceTypesHandler implements
                     qtd.setQtdAtendimentoCadastramentoCadUnico(rs.getInt("total_qtd_cadastramento_cadunico"));
                     qtd.setQtdVisitaDomiciliar(rs.getInt("total_qtd_visita_domiciliar"));
 
-                    logger.log(qtd.getUnit().getName());
-
                     assistanceTypesByUnits.add(qtd);
                 }
             }
@@ -99,17 +97,30 @@ public class AssistanceTypesHandler implements
             conn.close();
 
         } catch (Exception e) {
-            logger.log("Error: " + e.getMessage());
+            logger.log(" Error during connection with database: " + e.getMessage());
         }
 
         // Convert the unit's list to JSON
         Gson gson = new Gson();
         String jsonResponse = gson.toJson(assistanceTypesByUnits);
-        logger.log(jsonResponse);
+        logger.log(" Generated Json");
 
+        String encryptedJson = "";
+
+        // Encrypt JsonResponse
+        try {
+            CryptographyService cryptographyService = new CryptographyService();
+            encryptedJson = cryptographyService.encryptWithAES(jsonResponse, DB_SECRET_KEY);
+            logger.log(" Encrypted Json");
+        }
+        catch (Exception e){
+            logger.log(" Error in encrypt Json: " + e.getMessage());
+        }
+
+        // Create response HTTP
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
         response.setStatusCode(200);
-        response.setBody(jsonResponse);
+        response.setBody(encryptedJson);
         response.setIsBase64Encoded(false);
 
         Map<String, String> headers = new HashMap<>();
