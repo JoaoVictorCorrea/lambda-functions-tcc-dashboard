@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import tcc.dashboard.models.Unit;
 import tcc.dashboard.models.ViolenceSituationsTypesByUnit;
 import tcc.dashboard.services.CryptographyService;
+import tcc.dashboard.services.UnitService;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -28,6 +29,7 @@ public class ViolenceSituationsTypesHandler implements
 
         Map<String, String> queryParams = request.getQueryStringParameters();
         String year = queryParams != null ? queryParams.get("year") : null;
+        String query = "";
 
         logger.log("Param year - " + year);
 
@@ -55,21 +57,9 @@ public class ViolenceSituationsTypesHandler implements
             // Create a Statement to execute queries
             Statement stmt = conn.createStatement();
 
-            // Execute a query
-            String query = "SELECT * FROM unidade WHERE tenant_id = 1 AND codigo NOT IN (1, 8, 9, 12, 19, 20)";
-            ResultSet rs = stmt.executeQuery(query);
-
-            // Iterate through results
-            while (rs.next()) {
-                Unit unit = new Unit();
-                unit.setId(rs.getLong("codigo"));
-                unit.setName(rs.getString("nome"));
-
-                logger.log(unit.getName());
-
-                // Adds each unit in the units list
-                units.add(unit);
-            }
+            // Get the units
+            UnitService unitService = new UnitService();
+            units = unitService.getActiveUnits(conn, stmt, logger);
 
             // Iterate each unit and consult total of assistance types
             for(Unit unit: units) {
@@ -80,7 +70,7 @@ public class ViolenceSituationsTypesHandler implements
                     query = createQueryWithoutYear(unit);
 
                 // Execute a query
-                rs = stmt.executeQuery(query);
+                ResultSet rs = stmt.executeQuery(query);
 
                 while (rs.next()) {
                     ViolenceSituationsTypesByUnit qtd = new ViolenceSituationsTypesByUnit();
