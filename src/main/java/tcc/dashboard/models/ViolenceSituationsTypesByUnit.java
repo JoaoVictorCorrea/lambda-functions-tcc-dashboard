@@ -10,17 +10,22 @@ public class ViolenceSituationsTypesByUnit {
     private int qtdAbusoOuViolenciaSexual;
     private int qtdAtoInfracional;
     private int qtdNegligenciaContraCrianca;
+    private int qtdOpen;
+    private int qtdClosed;
 
     public ViolenceSituationsTypesByUnit() {}
 
     public ViolenceSituationsTypesByUnit(Unit unit, int qtdFisica, int qtdPsicologica,
-                                         int qtdAbusoOuViolenciaSexual, int qtdAtoInfracional, int qtdNegligenciaContraCrianca) {
+                                         int qtdAbusoOuViolenciaSexual, int qtdAtoInfracional, int qtdNegligenciaContraCrianca,
+                                         int qtdOpen, int qtdClosed) {
         this.unit = unit;
         this.qtdFisica = qtdFisica;
         this.qtdPsicologica = qtdPsicologica;
         this.qtdAbusoOuViolenciaSexual = qtdAbusoOuViolenciaSexual;
         this.qtdAtoInfracional = qtdAtoInfracional;
         this.qtdNegligenciaContraCrianca = qtdNegligenciaContraCrianca;
+        this.qtdOpen = qtdOpen;
+        this.qtdClosed = qtdClosed;
     }
 
     public Unit getUnit() {
@@ -71,16 +76,32 @@ public class ViolenceSituationsTypesByUnit {
         this.qtdNegligenciaContraCrianca = qtdNegligenciaContraCrianca;
     }
 
+    public int getQtdOpen() {
+        return qtdOpen;
+    }
+
+    public void setQtdOpen(int qtdOpen) {
+        this.qtdOpen = qtdOpen;
+    }
+
+    public int getQtdClosed() {
+        return qtdClosed;
+    }
+
+    public void setQtdClosed(int qtdClosed) {
+        this.qtdClosed = qtdClosed;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ViolenceSituationsTypesByUnit that = (ViolenceSituationsTypesByUnit) o;
-        return qtdFisica == that.qtdFisica && qtdPsicologica == that.qtdPsicologica && qtdAbusoOuViolenciaSexual == that.qtdAbusoOuViolenciaSexual && qtdAtoInfracional == that.qtdAtoInfracional && qtdNegligenciaContraCrianca == that.qtdNegligenciaContraCrianca && Objects.equals(unit, that.unit);
+        return qtdFisica == that.qtdFisica && qtdPsicologica == that.qtdPsicologica && qtdAbusoOuViolenciaSexual == that.qtdAbusoOuViolenciaSexual && qtdAtoInfracional == that.qtdAtoInfracional && qtdNegligenciaContraCrianca == that.qtdNegligenciaContraCrianca && qtdOpen == that.qtdOpen && qtdClosed == that.qtdClosed && Objects.equals(unit, that.unit);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unit, qtdFisica, qtdPsicologica, qtdAbusoOuViolenciaSexual, qtdAtoInfracional, qtdNegligenciaContraCrianca);
+        return Objects.hash(unit, qtdFisica, qtdPsicologica, qtdAbusoOuViolenciaSexual, qtdAtoInfracional, qtdNegligenciaContraCrianca, qtdOpen, qtdClosed);
     }
 }
